@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Business Day Countdown</title>
+
+  <style>
+    :root {
+      --bg: #08080b;
+      --card: rgba(255, 255, 255, 0.08);
+      --text: #f5f5f5;
+      --muted: #a7a7b3;
+      --accent: #ff3b3b;
+      --accent-2: #f5c542;
+      --green: #39ff88;
+      --border: rgba(255, 255, 255, 0.14);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(255, 59, 59, 0.18), transparent 34%),
+        radial-gradient(circle at bottom right, rgba(245, 197, 66, 0.12), transparent 34%),
+        linear-gradient(135deg, #050507 0%, #111118 58%, #050507 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+
+    .noise {
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      opacity: 0.08;
+      background-image:
+        linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+      background-size: 26px 26px;
+      mask-image: linear-gradient(to bottom, black, transparent 85%);
+    }
+
+    .wrap {
+      width: min(960px, 100%);
+      position: relative;
+      z-index: 1;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      padding: 9px 13px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      background: var(--green);
+      border-radius: 999px;
+      box-shadow: 0 0 18px var(--green);
+    }
+
+    .hero {
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.045));
+      box-shadow: 0 30px 90px rgba(0,0,0,.45);
+      border-radius: 28px;
+      padding: clamp(24px, 5vw, 56px);
+      backdrop-filter: blur(18px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero:before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      background: linear-gradient(120deg, transparent 20%, rgba(255,59,59,.35), transparent 55%, rgba(245,197,66,.22), transparent 80%);
+      opacity: .45;
+      filter: blur(26px);
+      z-index: -1;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(42px, 8vw, 96px);
+      line-height: 0.92;
+      letter-spacing: -0.07em;
+      max-width: 780px;
+    }
+
+    .sub {
+      color: var(--muted);
+      max-width: 650px;
+      font-size: clamp(16px, 2vw, 20px);
+      line-height: 1.55;
+      margin: 24px 0 34px;
+    }
+
+    .counter-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr 1fr;
+      gap: 16px;
+      margin: 30px 0;
+    }
+
+    .tile {
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: rgba(0,0,0,.26);
+      padding: 22px;
+      min-height: 150px;
+    }
+
+    .tile.main {
+      background:
+        linear-gradient(135deg, rgba(255,59,59,.18), rgba(0,0,0,.28)),
+        rgba(0,0,0,.28);
+    }
+
+    .label {
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .number {
+      margin-top: 12px;
+      font-size: clamp(48px, 9vw, 104px);
+      line-height: .9;
+      font-weight: 900;
+      letter-spacing: -0.06em;
+    }
+
+    .small-number {
+      margin-top: 16px;
+      font-size: clamp(28px, 4vw, 46px);
+      font-weight: 850;
+      letter-spacing: -0.04em;
+    }
+
+    .snark {
+      margin-top: 18px;
+      color: var(--accent-2);
+      font-weight: 750;
+      font-size: 17px;
+    }
+
+    .progress-wrap { margin-top: 28px; }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .bar {
+      width: 100%;
+      height: 14px;
+      background: rgba(255,255,255,.09);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      border-radius: 999px;
+      transition: width .6s ease;
+    }
+
+    .footer {
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .footer strong { color: var(--text); }
+
+    @media (max-width: 760px) {
+      .counter-grid { grid-template-columns: 1fr; }
+      .tile { min-height: auto; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="noise"></div>
+
+  <main class="wrap">
+    <div class="badge">
+      <span class="dot"></span>
+      Countdown engine active
+    </div>
+
+    <section class="hero">
+      <h1>Days until freedom, give or take a federal holiday.</h1>
+
+      <p class="sub">
+        Business days remaining until <strong>December 2, 2027</strong>.
+        Weekends are ignored. Federal holidays are treated with the respect they legally demand.
+      </p>
+
+      <div class="counter-grid">
+        <div class="tile main">
+          <div class="label">Business days left</div>
+          <div class="number" id="businessDays">...</div>
+          <div class="snark" id="snarkLine">Calculating the corporate sentence...</div>
+        </div>
+
+        <div class="tile">
+          <div class="label">Calendar days left</div>
+          <div class="small-number" id="calendarDays">...</div>
+        </div>
+
+        <div class="tile">
+          <div class="label">Next federal holiday</div>
+          <div class="small-number" id="nextHoliday">...</div>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-top">
+          <span>Progress since July 3, 2026</span>
+          <span id="progressPct">...</span>
+        </div>
+        <div class="bar">
+          <div class="fill" id="progressFill"></div>
+        </div>
+      </div>
+
+      <p class="footer">
+        Count includes <strong>today</strong> and includes <strong>December 2, 2027</strong> if it is a business day.
+        Federal holidays are calculated for 2026 and 2027, including observed dates.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    const TARGET_DATE = new Date("2027-12-02T00:00:00");
+    const START_DATE = new Date("2026-07-03T00:00:00");
+
+    const holidays = [
+      { date: "2026-07-03", name: "Independence Day observed" },
+      { date: "2026-09-07", name: "Labor Day" },
+      { date: "2026-10-12", name: "Columbus Day / Indigenous Peoples' Day" },
+      { date: "2026-11-11", name: "Veterans Day" },
+      { date: "2026-11-26", name: "Thanksgiving" },
+      { date: "2026-12-25", name: "Christmas Day" },
+      { date: "2027-01-01", name: "New Year's Day" },
+      { date: "2027-01-18", name: "MLK Day" },
+      { date: "2027-02-15", name: "Washington's Birthday" },
+      { date: "2027-05-31", name: "Memorial Day" },
+      { date: "2027-06-18", name: "Juneteenth observed" },
+      { date: "2027-07-05", name: "Independence Day observed" },
+      { date: "2027-09-06", name: "Labor Day" },
+      { date: "2027-10-11", name: "Columbus Day / Indigenous Peoples' Day" },
+      { date: "2027-11-11", name: "Veterans Day" },
+      { date: "2027-11-25", name: "Thanksgiving" }
+    ];
+
+    const holidaySet = new Set(holidays.map(h => h.date));
+
+    function normalizeDate(date) {
+      const normalized = new Date(date);
+      normalized.setHours(0, 0, 0, 0);
+      return normalized;
+    }
+
+    function toISODate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function isBusinessDay(date) {
+      const day = date.getDay();
+      return day !== 0 && day !== 6 && !holidaySet.has(toISODate(date));
+    }
+
+    function countBusinessDays(start, end) {
+      let count = 0;
+      let current = normalizeDate(start);
+      const finish = normalizeDate(end);
+
+      while (current <= finish) {
+        if (isBusinessDay(current)) count++;
+        current.setDate(current.getDate() + 1);
+      }
+
+      return count;
+    }
+
+    function countCalendarDays(start, end) {
+      const oneDay = 24 * 60 * 60 * 1000;
+      const startDate = normalizeDate(start);
+      const endDate = normalizeDate(end);
+      return Math.max(0, Math.floor((endDate - startDate) / oneDay) + 1);
+    }
+
+    function getNextHoliday(today) {
+      const todayISO = toISODate(normalizeDate(today));
+      return holidays.find(h => h.date >= todayISO);
+    }
+
+    function getSnark(days) {
+      if (days <= 0) return "It happened. The spreadsheet lost.";
+      if (days <= 25) return "Basically tomorrow, in operations time.";
+      if (days <= 75) return "Close enough to smell the auto-reply.";
+      if (days <= 150) return "The tunnel has light. Probably not an oncoming audit.";
+      if (days <= 250) return "Still a journey. But the monster has a health bar now.";
+      if (days <= 365) return "Under one corporate dog year.";
+      return "Plenty of time for management to invent three new dashboards.";
+    }
+
+    function updateCountdown() {
+      const today = normalizeDate(new Date());
+      const businessDays = countBusinessDays(today, TARGET_DATE);
+      const calendarDays = countCalendarDays(today, TARGET_DATE);
+      const totalBusinessDays = countBusinessDays(START_DATE, TARGET_DATE);
+      const elapsedBusinessDays = Math.max(0, totalBusinessDays - businessDays);
+      const progress = Math.min(100, Math.max(0, (elapsedBusinessDays / totalBusinessDays) * 100));
+      const nextHoliday = getNextHoliday(today);
+
+      document.getElementById("businessDays").textContent = businessDays.toLocaleString();
+      document.getElementById("calendarDays").textContent = calendarDays.toLocaleString();
+      document.getElementById("snarkLine").textContent = getSnark(businessDays);
+      document.getElementById("progressPct").textContent = `${progress.toFixed(1)}% done`;
+      document.getElementById("progressFill").style.width = `${progress}%`;
+
+      document.getElementById("nextHoliday").textContent = nextHoliday
+        ? nextHoliday.name
+        : "No more before target";
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 60 * 60 * 1000);
+  </script>
+</body>
+</html>
